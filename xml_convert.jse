@@ -1,13 +1,21 @@
-// �uFileSystemObject�v�I�u�W�F�N�g����
+// XML用に作成しましたが、単純なテキスト置換です
+
+// 「FileSystemObject」オブジェクト生成
 var fso = new ActiveXObject("Scripting.FileSystemObject");
-// Script�̃J�����g�p�X�擾
+// Scriptのカレントパス取得
 var folderpath = fso.GetParentFolderName(WScript.ScriptFullName) + "\\";
 
-var srckwd = 'stt="on"';
-var dstkwd = 'stt="off"';
-var contents = '';
-var dirnew = 'new\\';
+// 用途によって改変する変数
+// 変更したい
+var srckwd = '';
+// 変更後
+var dstkwd = '';
+// 読み込むディレクトリ
 var dirold = 'old\\';
+// 保存先のディレクトリ
+var dirnew = 'new\\';
+
+var contents = '';
 
 
 function dir_create(dir){
@@ -18,15 +26,16 @@ function dir_create(dir){
     }
 }
 
+// 文字コードを指定して読み込む。実行前に適宜変更。
 function file_open(file, encode){
     var stream = WScript.CreateObject('ADODB.Stream');
-    stream.charset = encode || "Shift_JIS";
+    stream.charset = encode || "UTF-8";
     stream.Open();
     stream.loadFromFile(file);
     var contents = stream.ReadText();
     stream.close();
 
-	contents = contents.replace(srckwd, dstkwd)
+    contents = contents.replace(srckwd, dstkwd)
     return contents;
 }
 
@@ -39,22 +48,22 @@ function file_save(file, contents, encode){
     stream.Close();
 }
 
-// �t�@�C���ꗗ������
+// ファイル一覧を巡回
 function enumFiles(target) {
   if (fso.FileExists(target)) {
     return [target];
   }
   if (!fso.FolderExists(target)) return [];
   var result = [];
-  // �w��p�X�̃t�@�C���ꗗ�𓾂�
+  // 指定パスのファイル一覧を得る
   var dir = fso.GetFolder(target);
-  // �t�@�C���������������
+  // ファイルを一つずつ処理する
   var e = new Enumerator(dir.Files);
   for ( ; !e.atEnd(); e.moveNext()) {
     var file = e.item();
     result.push(file.Path);
   }
-  // �ċA�I�Ƀf�B���N�g������������
+  // 再帰的にディレクトリを処理する
   e = new Enumerator(dir.SubFolders);
   for ( ; !e.atEnd(); e.moveNext()) {
     var r = enumFiles(e.item());
@@ -67,10 +76,11 @@ dir_create(dirnew);
 
 var jsArray = enumFiles(folderpath + dirold);
 
+// 文字コード適宜変更
 for (i=0; i<jsArray.length; i++){
-	contents = file_open(jsArray[i], "Shift_JIS");
+	contents = file_open(jsArray[i], "UTF-8");
 	var newfile = folderpath + dirnew + fso.GetFileName(jsArray[i]);
-	file_save(newfile, contents, "Shift_JIS");
+	file_save(newfile, contents, "UTF-8");
 }
 
 fs = null;
