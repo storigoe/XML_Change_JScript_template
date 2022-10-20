@@ -1,0 +1,79 @@
+// 「FileSystemObject」オブジェクト生成
+var fso = new ActiveXObject("Scripting.FileSystemObject");
+// Scriptのカレントパス取得
+var folderpath = fso.GetParentFolderName(WScript.ScriptFullName) + "\\";
+
+var srckwd = 'stt="on"';
+var dstkwd = 'stt="off"';
+var contents = '';
+var dirnew = 'new\\';
+var dirold = 'old\\';
+
+
+function dir_create(dir){
+    var fs = WScript.CreateObject("Scripting.FileSystemObject");
+
+    if(!fs.FolderExists(dir)){
+        fs.CreateFolder(dir);
+    }
+}
+
+function file_open(file, encode){
+    var stream = WScript.CreateObject('ADODB.Stream');
+    stream.charset = encode || "Shift_JIS";
+    stream.Open();
+    stream.loadFromFile(file);
+    var contents = stream.ReadText();
+    stream.close();
+
+	contents = contents.replace(srckwd, dstkwd)
+    return contents;
+}
+
+function file_save(file, contents, encode){
+    var stream = WScript.CreateObject('ADODB.Stream');
+    stream.charset = encode;
+    stream.Open();
+    stream.WriteText(contents);
+    stream.SaveToFile(file, 2);
+    stream.Close();
+}
+
+// ファイル一覧を巡回
+function enumFiles(target) {
+  if (fso.FileExists(target)) {
+    return [target];
+  }
+  if (!fso.FolderExists(target)) return [];
+  var result = [];
+  // 指定パスのファイル一覧を得る
+  var dir = fso.GetFolder(target);
+  // ファイルを一つずつ処理する
+  var e = new Enumerator(dir.Files);
+  for ( ; !e.atEnd(); e.moveNext()) {
+    var file = e.item();
+    result.push(file.Path);
+  }
+  // 再帰的にディレクトリを処理する
+  e = new Enumerator(dir.SubFolders);
+  for ( ; !e.atEnd(); e.moveNext()) {
+    var r = enumFiles(e.item());
+    result = result.concat(r);
+  }
+  return result;
+}
+
+dir_create(dirnew);
+
+var jsArray = enumFiles(folderpath + dirold);
+
+for (i=0; i<jsArray.length; i++){
+	contents = file_open(jsArray[i], "Shift_JIS");
+	var newfile = folderpath + dirnew + fso.GetFileName(jsArray[i]);
+	file_save(newfile, contents, "Shift_JIS");
+}
+
+fs = null;
+fso = null;
+
+WScript.Quit();
